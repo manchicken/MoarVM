@@ -284,6 +284,9 @@ void MVM_jit_compile_expr_tree(MVMThreadContext *tc, MVMJitCompiler *compiler, M
     MVMJitTile *tile;
     MVMint32 i;
 
+    /* stage zero, optimize the tree */
+    MVM_jit_expr_tree_optimize(tc, jg, tree);
+
     /* Log what we are planning to compile */
     if (MVM_jit_debug_enabled(tc))
         MVM_jit_dump_expr_tree(tc, tree);
