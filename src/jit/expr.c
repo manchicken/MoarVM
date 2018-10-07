@@ -233,6 +233,10 @@ static MVMint32 MVM_jit_expr_add_const(MVMThreadContext *tc, MVMJitExprTree *tre
         constant = opr.lit_i16;
         size = sizeof(MVMuint16);
         break;
+    case MVM_operand_uint32:
+        constant = opr.lit_ui32;
+        size = sizeof(MVMuint32);
+        break;
     default:
         MVM_oops(tc, "Can't add constant for operand type %d\n", (type & MVM_operand_type_mask) >> 3);
     }

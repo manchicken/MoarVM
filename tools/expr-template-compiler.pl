@@ -96,6 +96,10 @@ sub opcode_operand_direction {
     $_[0] =~ m/^([rw])l?\(/ ? $1 : '';
 }
 
+sub looks_like_number_or_hex {
+    looks_like_number($_[0]) || $_[0] =~ m/^0x[\da-f]+$/;
+}
+
 # Pre compute exptected operand type and direction
 my %MOAR_OPERAND_DIRECTION;
 for my $opcode (@OPLIST) {
@@ -159,7 +163,7 @@ sub link_declarations {
             if (is_arrayref($operand) and @$operand) {
                 link_declarations($operand, %env);
             } elsif ($operand =~ m/\$(\w+)/) {
-                next if looks_like_number($1);
+                next if looks_like_number_or_hex($1);
                 die "Invalid name $operand" unless exists $env{$operand};
                 $expr->[$i] = $env{$operand};
             }
@@ -185,7 +189,7 @@ sub apply_macros {
         if (my $macro = $macros->{$operator}) {
             my ($params, $structure) = @$macro;
             die sprintf("Macro %s needs %d params, got %d",
-                        $operator, $#$expr, 0+@{$params})
+                        $operator, 0+@{$params}, $#$expr)
                 unless $#$expr == @{$params};
             my %bind; @bind{@$params} = @$expr[1..$#$expr];
             my $instance = expand_macro($structure, \%bind, {});
@@ -296,7 +300,7 @@ sub compile_expression {
         die "Expected size parameter" unless
             # macro, number or bareword-ending-with-size
             ((is_arrayref($size) && $size->[0] =~ m/^&/) ||
-             looks_like_number($size) || $size =~ m/_sz$/);
+             looks_like_number_or_hex($size) || $size =~ m/_sz$/);
     }
     for (; $i < $num_operands + $num_params; $i++) {
         push @code, compile_parameter($compiler, $operands[$i]);
@@ -328,7 +332,7 @@ sub compile_reference {
     my ($compiler, $expr) = @_;
     die "Expected reference got $expr" unless
         my ($ref, $name) = $expr =~ m/^(\\?)\$(\w+)/;
-    if (looks_like_number($name)) {
+    if (looks_like_number_or_hex($name)) {
         my $opcode = $compiler->{opcode};
         # special case for dec_i/inc_i
         return 'i' => $name if $opcode =~ m/^(dec|inc)_i$/ and $name <= 1;
@@ -353,7 +357,7 @@ sub compile_parameter {
     my ($compiler, $expr) = @_;
     if (is_arrayref($expr)) {
         return compile_macro($compiler, $expr);
-    } elsif (looks_like_number($expr)) {
+    } elsif (looks_like_number_or_hex($expr)) {
         return '.' => $expr;
     } else {
         return compile_bareword($compiler, $expr);
@@ -371,7 +375,7 @@ sub compile_macro {
 sub compile_operator {
     my ($compiler, $expr, $num_operands) = @_;
     die "$expr is not a valid operator" unless exists $EXPR_OPS{$expr};
-    die "Invalid size $num_operands" unless looks_like_number($num_operands);
+    die "Invalid size $num_operands" unless looks_like_number_or_hex($num_operands);
     return ('n' => $PREFIX . uc($expr), 's' => $num_operands);
 }
 
