@@ -204,6 +204,7 @@ MVM_PUBLIC const MVMint32 MVM_jit_support(void);
 #include "jit/register.h"
 #include "jit/tile.h"
 #include "jit/compile.h"
+#include "jit/nativecall.h"
 #include "jit/dump.h"
 #include "jit/interface.h"
 #include "profiler/instrument.h"
